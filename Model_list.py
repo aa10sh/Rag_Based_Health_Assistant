@@ -1,11 +1,14 @@
-import os
-from dotenv import load_dotenv
-import google.generativeai as genai
-
-# Load API key from .env
-load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-# List available models
-models = genai.list_models()
-print("Available models:", [m.name for m in models])
+Available_Models={
+    "Phi -3.5(Local)":{
+        "provider":"ollama",
+        "model":"phi3.5"
+    },
+    "gemini 1.5 Flash":{
+        "provider":"gemini",
+        "model": "gemini-1.5-flash"
+    },
+    "FLAN-T5 Large (HF Free)": {
+        "provider": "huggingface",
+        "model": "google/flan-t5-large"
+    }
+}

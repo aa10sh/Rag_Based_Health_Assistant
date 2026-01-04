@@ -1,5 +1,6 @@
 from extractor import extract_text_from_pdf
-from llm_client import analyze_report, chatbot_reply
+from Analysis import analyze_report, chat_with_report
+from Model_list import Available_Models
 from prompts import ANALYSIS_PROMPT
 
 import streamlit as st
@@ -58,6 +59,16 @@ st.markdown("<h1 style='text-align:center; color:orange;'>🩺 Health Report Ana
 st.markdown("<p style='text-align:center; color:orange; font-size:18px;'>Upload your health report and get simple highlights</p>", unsafe_allow_html=True)
 
 # --------------------------
+# LLM Selection
+# --------------------------
+selected_model_label = st.selectbox(
+    "🧠 Select LLM Model",
+    options=Available_Models.keys()
+)
+
+model_cfg = Available_Models[selected_model_label]
+
+# --------------------------
 # Upload Section
 # --------------------------
 with st.container():
@@ -73,16 +84,18 @@ with st.container():
 
 
         with st.spinner("Analyzing report…"):
-            analysis_result = analyze_report(extracted_text, ANALYSIS_PROMPT)
+            analysis_result = analyze_report(
+               extracted_text,
+               model_cfg,
+               temperature=0.3,
+               max_tokens=512
+        )
 
         st.subheader("📌 Report Highlights (AI Generated)")
         st.markdown(analysis_result, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --------------------------
-# Chatbot Section
-# --------------------------
 # --------------------------
 # Chatbot Section
 # --------------------------
@@ -121,10 +134,15 @@ if user_prompt:
         # Assistant response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                reply = chatbot_reply(
-                    st.session_state.report_text,
-                    st.session_state.chat_history
+                reply = chat_with_report(
+                   st.session_state.report_text,
+                   st.session_state.chat_history,
+                   model_cfg,
+                   temperature=0.3,
+                   max_tokens=512
                 )
+
+  
                 st.markdown(reply)
 
         st.session_state.chat_history.append(

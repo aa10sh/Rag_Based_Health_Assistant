@@ -1,34 +1,78 @@
+import os
+import requests 
 import ollama
-from prompts import CHATBOT_SYSTEM_PROMPT
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 
-MODEL_NAME = "phi3.5"   # free local model
 
-def analyze_report(text, prompt):
-    full_prompt = prompt.format(report_text=text)
+load_dotenv()
 
+genai.configure(api_key=os.getenv("Gemini_API_KEY"))
+
+HF_API_KEY=os.getenv("HF_API_KEY")
+HF_HEADERS={"Authorization": f"Bearer {HF_API_KEY}"}
+
+
+def call_gemini(prompt, model, temperature, max_tokens):
+    llm=genai.GenerativeModel(model)
+    response= llm.generate_content(
+        prompt,
+        generation_config={
+            "temperature": temperature,
+            "max_output_tokens":max_tokens
+        }
+    )
+    return response.text
+
+
+def call_hf(prompt,model, temperature, max_tokens):
+    url=f"https://api-inference.huggingface.co/models/{model}"
+    payload = {
+    "inputs": prompt,
+    "parameters": {
+        "temperature": temperature,
+        "max_new_tokens": max_tokens
+    }
+}
+
+    
+
+    response=requests.post(url, headers=HF_HEADERS, json=payload, timeout=60)
+    response.raise_for_status()
+    return response.json()[0]["generated_text"]
+
+
+def call_ollama(prompt, model, temperature, max_tokens):
     response = ollama.chat(
-        model=MODEL_NAME,
+        model=model,
         messages=[
-            {"role": "user", "content": full_prompt}
+            {"role": "user", "content": prompt}
         ],
-        options={"num_predict": 120}
+        options={
+            "temperature": temperature,
+            "num_predict": max_tokens
+        }
     )
-
     return response["message"]["content"]
 
-def chatbot_reply(report_text, chat_history):
-    system_prompt = CHATBOT_SYSTEM_PROMPT.format(
-        report_text=report_text
-    )
 
-    messages = [{"role": "system", "content": system_prompt}]
-    messages.extend(chat_history)
+def call_llm(prompt, model_cfg, temperature, max_tokens):
+    provider=model_cfg["provider"]
+    model=model_cfg["model"]
 
-    response = ollama.chat(
-        model=MODEL_NAME,
-        messages=messages,
-        options={"num_predict": 150}
-    )
+    if provider == "gemini":
+        return call_gemini(prompt, model, temperature, max_tokens)
+    
+    if provider == "huggingface":
+        return call_hf(prompt, model, temperature, max_tokens)
+    
+    if provider == "ollama":
+        return call_ollama(prompt, model, temperature, max_tokens)
+    
+    raise ValueError("Unsupprted LLM Model")
 
-    return response["message"]["content"]
+
+
+
+

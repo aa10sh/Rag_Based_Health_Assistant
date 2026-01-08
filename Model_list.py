@@ -10,5 +10,9 @@ Available_Models={
     "FLAN-T5 Large (HF Free)": {
         "provider": "huggingface",
         "model": "google/flan-t5-large"
+    },
+    "Mistral 7B Instruct (HF)": {
+        "provider": "huggingface",
+        "model": "mistralai/Mistral-7B-Instruct-v0.3"
     }
 }

@@ -26,21 +26,52 @@ def call_gemini(prompt, model, temperature, max_tokens):
     return response.text
 
 
-def call_hf(prompt,model, temperature, max_tokens):
-    url=f"https://api-inference.huggingface.co/models/{model}"
-    payload = {
-    "inputs": prompt,
-    "parameters": {
-        "temperature": temperature,
-        "max_new_tokens": max_tokens
-    }
-}
+def call_hf(prompt, model, temperature, max_tokens):
+    # Mistral & chat models → new HF Chat API
+    if "mistral" in model.lower():
+        url = "https://api-inference.huggingface.co/v1/chat/completions"
 
-    
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens
+        }
 
-    response=requests.post(url, headers=HF_HEADERS, json=payload, timeout=60)
-    response.raise_for_status()
-    return response.json()[0]["generated_text"]
+        response = requests.post(
+            url,
+            headers=HF_HEADERS,
+            json=payload,
+            timeout=90
+        )
+        response.raise_for_status()
+
+        return response.json()["choices"][0]["message"]["content"]
+
+    # Legacy text-generation models (FLAN, etc.)
+    else:
+        url = f"https://api-inference.huggingface.co/models/{model}"
+
+        payload = {
+            "inputs": prompt,
+            "parameters": {
+                "temperature": temperature,
+                "max_new_tokens": max_tokens
+            }
+        }
+
+        response = requests.post(
+            url,
+            headers=HF_HEADERS,
+            json=payload,
+            timeout=60
+        )
+        response.raise_for_status()
+
+        return response.json()[0]["generated_text"]
+
 
 
 def call_ollama(prompt, model, temperature, max_tokens):

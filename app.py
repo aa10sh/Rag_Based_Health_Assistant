@@ -91,7 +91,7 @@ with st.container():
                max_tokens=512
         )
 
-        st.subheader("📌 Report Highlights (AI Generated)")
+        st.subheader("📌 Report Highlights")
         st.markdown(analysis_result, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
